@@ -7,29 +7,19 @@ from pathlib import Path
 # Diretórios
 RAW_PATH = Path("data/raw")
 PROCESSED_PATH = Path("data/processed")
+AGGREGATED_PATH = PROCESSED_PATH / "aggregated"
 PROCESSED_PATH.mkdir(parents=True, exist_ok=True)
+AGGREGATED_PATH.mkdir(parents=True, exist_ok=True)
 
-# Mapeamentos de categorias
-SEXO_MAP = {
-    1: 'Masculino', 2: 'Feminino', 3: 'Não Binário', 9: 'Ignorado',
-    'M': 'Masculino', 'F': 'Feminino', 'I': 'Ignorado'
-}
-
-GESTANTE_MAP = {
-    1: '1º Trimestre', 2: '2º Trimestre', 3: '3º Trimestre',
-    4: 'Idade gestacional ignorada', 5: 'Não gestante',
-    6: 'Idade gestacional não se aplica', 9: 'Ignorado'
-}
-
-SIM_NAO_MAP = {
-    1: 'Sim', 2: 'Não', 9: 'Ignorado',
-    'S': 'Sim', 'N': 'Não'
-}
-
-EVOLUCAO_MAP = {
-    1: 'Cura', 2: 'Óbito por Mpox', 3: 'Óbito por outras causas',
-    4: 'Em acompanhamento', 9: 'Ignorado'
-}
+# Mapeamentos
+SEXO_MAP = {1: 'Masculino', 2: 'Feminino', 3: 'Não Binário', 9: 'Ignorado',
+            'M': 'Masculino', 'F': 'Feminino', 'I': 'Ignorado'}
+GESTANTE_MAP = {1: '1º Trimestre', 2: '2º Trimestre', 3: '3º Trimestre',
+                4: 'Idade gestacional ignorada', 5: 'Não gestante',
+                6: 'Idade gestacional não se aplica', 9: 'Ignorado'}
+SIM_NAO_MAP = {1: 'Sim', 2: 'Não', 9: 'Ignorado', 'S': 'Sim', 'N': 'Não'}
+EVOLUCAO_MAP = {1: 'Cura', 2: 'Óbito por Mpox', 3: 'Óbito por outras causas',
+                4: 'Em acompanhamento', 9: 'Ignorado'}
 
 def carregar_arquivo_csv():
     arquivos = sorted(RAW_PATH.glob("mpox_data_*.csv"), reverse=True)
@@ -78,15 +68,23 @@ def processar_dados(df):
             df[col] = df[col].fillna('Ignorado')
 
     df = df.dropna(subset=['dt_notific'])
-
     return df
 
 def salvar_dados(df):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    nome_arquivo = f"mpox_processed_{timestamp}.csv"
-    caminho = PROCESSED_PATH / nome_arquivo
-    df.to_csv(caminho, index=False)
-    print(f"[INFO] Dados processados salvos em: {caminho}")
+
+    # Salvar dados detalhados
+    nome_individual = f"mpox_processed_{timestamp}.csv"
+    caminho_individual = PROCESSED_PATH / nome_individual
+    df.to_csv(caminho_individual, index=False)
+    print(f"[INFO] Dados processados salvos em: {caminho_individual}")
+
+    # Salvar dados agregados
+    df_agg = df.groupby(['sg_uf_not', 'ano_mes']).size().reset_index(name='casos')
+    nome_agg = f"casos_por_estado_mes_{timestamp}.csv"
+    caminho_agg = AGGREGATED_PATH / nome_agg
+    df_agg.to_csv(caminho_agg, index=False)
+    print(f"[INFO] Dados agregados salvos em: {caminho_agg}")
 
 def main():
     df = carregar_arquivo_csv()
