@@ -1,6 +1,6 @@
 # Coleta e manipulação de dados
 requests==2.31.0
-pandas==2.2.2 --only-binary :all:
+pandas==2.2.3
 python-dotenv==1.0.0
 
 # Visualização e Dashboard
